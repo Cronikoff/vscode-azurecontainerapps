@@ -68,12 +68,26 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
     }
 
     private getPicks(deploymentConfigurations: DeploymentConfigurationSettings[]): IAzureQuickPickItem<(DeploymentConfigurationSettings & { configurationIdx?: number }) | undefined>[] {
-        const picks: IAzureQuickPickItem<DeploymentConfigurationSettings | undefined>[] = deploymentConfigurations.map((deploymentConfiguration, i) => {
+        const scoredConfigurations: Array<{ deploymentConfiguration: DeploymentConfigurationSettings; configurationIdx: number; score: number }> = deploymentConfigurations
+            .map((deploymentConfiguration, i) => ({
+                deploymentConfiguration,
+                configurationIdx: i,
+                score: this.getDecisionScore(deploymentConfiguration)
+            }))
+            .sort((a, b) => b.score - a.score);
+
+        const topScore: number = scoredConfigurations[0]?.score ?? 0;
+        const picks: IAzureQuickPickItem<DeploymentConfigurationSettings | undefined>[] = scoredConfigurations.map(({ deploymentConfiguration, configurationIdx, score }) => {
+            const isRecommended: boolean = score > 0 && score === topScore;
+            const label: string = deploymentConfiguration.label || localize('unnamedApp', 'Unnamed app');
+            const containerAppDescription: string | undefined = deploymentConfiguration.label === deploymentConfiguration.containerApp ? undefined : deploymentConfiguration.containerApp;
+            const ownerDescription: string | undefined = deploymentConfiguration.creatorSignature ? localize('ownerSignatureDescription', 'owner: @{0}', deploymentConfiguration.creatorSignature) : undefined;
+            const description: string | undefined = [containerAppDescription, ownerDescription].filter(Boolean).join(' • ') || undefined;
+
             return {
-                label: deploymentConfiguration.label || localize('unnamedApp', 'Unnamed app'),
-                // Show the container app name as the description by default, unless the label has the same name
-                description: deploymentConfiguration.label === deploymentConfiguration.containerApp ? undefined : deploymentConfiguration.containerApp,
-                data: { ...deploymentConfiguration, configurationIdx: i }
+                label: isRecommended ? localize('recommendedDeploymentConfigurationLabel', '$(star-full) {0} (recommended)', label) : label,
+                description,
+                data: { ...deploymentConfiguration, configurationIdx }
             };
         });
 
@@ -83,5 +97,39 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
         });
 
         return picks;
+    }
+
+    private getDecisionScore(deploymentConfiguration: DeploymentConfigurationSettings): number {
+        let score: number = 0;
+
+        if (deploymentConfiguration.containerApp) {
+            score += 3;
+        }
+
+        if (deploymentConfiguration.resourceGroup) {
+            score += 2;
+        }
+
+        if (deploymentConfiguration.containerRegistry) {
+            score += 1;
+        }
+
+        if (deploymentConfiguration.dockerfilePath) {
+            score += 1;
+        }
+
+        if (deploymentConfiguration.srcPath) {
+            score += 1;
+        }
+
+        if (deploymentConfiguration.envPath) {
+            score += 1;
+        }
+
+        if (deploymentConfiguration.creatorSignature) {
+            score += 2;
+        }
+
+        return score;
     }
 }
