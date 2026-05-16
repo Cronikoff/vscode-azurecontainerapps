@@ -88,11 +88,14 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
                 configurationIdx: i,
                 score: this.calculateConfigurationScore(deploymentConfiguration)
             }))
-            .sort((a, b) => b.score - a.score);
+            .sort((a, b) => {
+                const scoreDifference: number = b.score - a.score;
+                return scoreDifference !== 0 ? scoreDifference : a.configurationIdx - b.configurationIdx;
+            });
 
-        const topScore: number = scoredConfigurations[0]?.score ?? 0;
-        const picks: IAzureQuickPickItem<DeploymentConfigurationSettings | undefined>[] = scoredConfigurations.map(({ deploymentConfiguration, configurationIdx, score }) => {
-            const isRecommended: boolean = score > 0 && score === topScore;
+        const recommendedConfigurationIdx: number | undefined = scoredConfigurations[0]?.score > 0 ? scoredConfigurations[0].configurationIdx : undefined;
+        const picks: IAzureQuickPickItem<DeploymentConfigurationSettings | undefined>[] = scoredConfigurations.map(({ deploymentConfiguration, configurationIdx }) => {
+            const isRecommended: boolean = configurationIdx === recommendedConfigurationIdx;
             const label: string = deploymentConfiguration.label || localize('unnamedApp', 'Unnamed app');
             const containerAppDescription: string | undefined = deploymentConfiguration.label === deploymentConfiguration.containerApp ? undefined : deploymentConfiguration.containerApp;
             const creatorDescription: string | undefined = deploymentConfiguration.creatorSignature ? localize('creatorSignatureDescription', 'creator: @{0}', deploymentConfiguration.creatorSignature) : undefined;
