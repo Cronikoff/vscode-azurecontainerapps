@@ -17,6 +17,14 @@ import { EnvUseRemoteConfigurationPromptStep } from "./filePaths/EnvUseRemoteCon
 import { EnvValidateStep } from "./filePaths/EnvValidateStep";
 import { SrcValidateStep } from "./filePaths/SrcValidateStep";
 
+const CONTAINER_APP_WEIGHT: number = 3;
+const RESOURCE_GROUP_WEIGHT: number = 2;
+const CONTAINER_REGISTRY_WEIGHT: number = 1;
+const DOCKERFILE_PATH_WEIGHT: number = 1;
+const SOURCE_PATH_WEIGHT: number = 1;
+const ENV_PATH_WEIGHT: number = 1;
+const CREATOR_SIGNATURE_WEIGHT: number = 2;
+
 export class DeploymentConfigurationListStep extends AzureWizardPromptStep<WorkspaceDeploymentConfigurationContext> {
     public async prompt(context: WorkspaceDeploymentConfigurationContext): Promise<void> {
         const deploymentConfigurations: DeploymentConfigurationSettings[] | undefined = await dwpSettingUtilsV2.getWorkspaceDeploymentConfigurations(nonNullProp(context, 'rootFolder'));
@@ -82,7 +90,8 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
             const label: string = deploymentConfiguration.label || localize('unnamedApp', 'Unnamed app');
             const containerAppDescription: string | undefined = deploymentConfiguration.label === deploymentConfiguration.containerApp ? undefined : deploymentConfiguration.containerApp;
             const ownerDescription: string | undefined = deploymentConfiguration.creatorSignature ? localize('ownerSignatureDescription', 'owner: @{0}', deploymentConfiguration.creatorSignature) : undefined;
-            const description: string | undefined = [containerAppDescription, ownerDescription].filter(Boolean).join(' • ') || undefined;
+            const descriptionParts: string[] = [containerAppDescription, ownerDescription].filter((part): part is string => !!part);
+            const description: string | undefined = descriptionParts.length > 0 ? descriptionParts.join(' • ') : undefined;
 
             return {
                 label: isRecommended ? localize('recommendedDeploymentConfigurationLabel', '$(star-full) {0} (recommended)', label) : label,
@@ -103,31 +112,31 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
         let score: number = 0;
 
         if (deploymentConfiguration.containerApp) {
-            score += 3;
+            score += CONTAINER_APP_WEIGHT;
         }
 
         if (deploymentConfiguration.resourceGroup) {
-            score += 2;
+            score += RESOURCE_GROUP_WEIGHT;
         }
 
         if (deploymentConfiguration.containerRegistry) {
-            score += 1;
+            score += CONTAINER_REGISTRY_WEIGHT;
         }
 
         if (deploymentConfiguration.dockerfilePath) {
-            score += 1;
+            score += DOCKERFILE_PATH_WEIGHT;
         }
 
         if (deploymentConfiguration.srcPath) {
-            score += 1;
+            score += SOURCE_PATH_WEIGHT;
         }
 
         if (deploymentConfiguration.envPath) {
-            score += 1;
+            score += ENV_PATH_WEIGHT;
         }
 
         if (deploymentConfiguration.creatorSignature) {
-            score += 2;
+            score += CREATOR_SIGNATURE_WEIGHT;
         }
 
         return score;

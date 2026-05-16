@@ -15,9 +15,9 @@ import { type DeploymentConfigurationSettings } from "../settings/DeployWorkspac
 import { dwpSettingUtilsV2 } from "../settings/dwpSettingUtilsV2";
 import { type DeployWorkspaceProjectInternalContext } from "./DeployWorkspaceProjectInternalContext";
 
-const gitHubUserApiUrl = 'https://api.github.com/user';
-const gitHubUserAgent = 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)';
-const gitHubUserRequestTimeoutMs = 5000;
+const GITHUB_USER_API_URL: string = 'https://api.github.com/user';
+const GITHUB_USER_AGENT: string = 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)';
+const GITHUB_USER_REQUEST_TIMEOUT_MS: number = 5000;
 
 interface GitHubUserResponse {
     login?: string;
@@ -98,12 +98,12 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
 
             const token: string = await getGitHubAccessToken();
             const headers = new Headers();
-            headers.set('Authorization', `Bearer ${token}`);
+            headers.set('Authorization', `token ${token}`);
             headers.set('Accept', 'application/vnd.github+json');
-            headers.set('User-Agent', gitHubUserAgent);
-            const response = await fetch(gitHubUserApiUrl, {
+            headers.set('User-Agent', GITHUB_USER_AGENT);
+            const response = await fetch(GITHUB_USER_API_URL, {
                 headers,
-                signal: AbortSignal.timeout(gitHubUserRequestTimeoutMs),
+                signal: AbortSignal.timeout(GITHUB_USER_REQUEST_TIMEOUT_MS),
             });
 
             if (!response.ok) {
