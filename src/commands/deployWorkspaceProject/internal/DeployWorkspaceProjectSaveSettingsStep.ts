@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AzureWizardExecuteStepWithActivityOutput, nonNullProp, nonNullValueAndProp } from "@microsoft/vscode-azext-utils";
-import { getGitHubAccessToken } from "@microsoft/vscode-azext-github";
+import { getGitHubAccessToken, gitHubUrlParse } from "@microsoft/vscode-azext-github";
 import * as path from "path";
 import { type Progress, type WorkspaceFolder, workspace } from "vscode";
 import { relativeSettingsFilePath } from "../../../constants";
@@ -78,7 +78,13 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
 
         try {
             const sourceControl = await getContainerAppSourceControl(context, context.subscription, context.containerApp);
-            if (!sourceControl?.repoUrl?.toLowerCase().includes('github.com')) {
+            if (!sourceControl?.repoUrl) {
+                return undefined;
+            }
+
+            try {
+                gitHubUrlParse(sourceControl.repoUrl);
+            } catch {
                 return undefined;
             }
 
@@ -86,7 +92,7 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
             const headers = new Headers();
             headers.set('Authorization', `Bearer ${token}`);
             headers.set('Accept', 'application/vnd.github+json');
-            headers.set('User-Agent', 'vscode-azurecontainerapps');
+            headers.set('User-Agent', 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)');
             const response = await fetch('https://api.github.com/user', {
                 headers
             });
