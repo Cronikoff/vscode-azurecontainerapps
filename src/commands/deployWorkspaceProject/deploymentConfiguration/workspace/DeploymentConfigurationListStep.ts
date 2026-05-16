@@ -25,6 +25,12 @@ const SOURCE_PATH_WEIGHT: number = 1;
 const ENV_PATH_WEIGHT: number = 1;
 const CREATOR_SIGNATURE_WEIGHT: number = 2;
 
+interface ScoredConfiguration {
+    deploymentConfiguration: DeploymentConfigurationSettings;
+    configurationIdx: number;
+    score: number;
+}
+
 export class DeploymentConfigurationListStep extends AzureWizardPromptStep<WorkspaceDeploymentConfigurationContext> {
     public async prompt(context: WorkspaceDeploymentConfigurationContext): Promise<void> {
         const deploymentConfigurations: DeploymentConfigurationSettings[] | undefined = await dwpSettingUtilsV2.getWorkspaceDeploymentConfigurations(nonNullProp(context, 'rootFolder'));
@@ -76,7 +82,7 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
     }
 
     private getPicks(deploymentConfigurations: DeploymentConfigurationSettings[]): IAzureQuickPickItem<(DeploymentConfigurationSettings & { configurationIdx?: number }) | undefined>[] {
-        const scoredConfigurations: Array<{ deploymentConfiguration: DeploymentConfigurationSettings; configurationIdx: number; score: number }> = deploymentConfigurations
+        const scoredConfigurations: ScoredConfiguration[] = deploymentConfigurations
             .map((deploymentConfiguration, i) => ({
                 deploymentConfiguration,
                 configurationIdx: i,
@@ -89,8 +95,8 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
             const isRecommended: boolean = score > 0 && score === topScore;
             const label: string = deploymentConfiguration.label || localize('unnamedApp', 'Unnamed app');
             const containerAppDescription: string | undefined = deploymentConfiguration.label === deploymentConfiguration.containerApp ? undefined : deploymentConfiguration.containerApp;
-            const ownerDescription: string | undefined = deploymentConfiguration.creatorSignature ? localize('ownerSignatureDescription', 'owner: @{0}', deploymentConfiguration.creatorSignature) : undefined;
-            const descriptionParts: string[] = [containerAppDescription, ownerDescription].filter((part): part is string => !!part);
+            const creatorDescription: string | undefined = deploymentConfiguration.creatorSignature ? localize('creatorSignatureDescription', 'creator: @{0}', deploymentConfiguration.creatorSignature) : undefined;
+            const descriptionParts: string[] = [containerAppDescription, creatorDescription].filter((part): part is string => !!part);
             const description: string | undefined = descriptionParts.length > 0 ? descriptionParts.join(' • ') : undefined;
 
             return {
