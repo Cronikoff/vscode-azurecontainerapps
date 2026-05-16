@@ -98,7 +98,7 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
 
             const token: string = await getGitHubAccessToken();
             const headers = new Headers();
-            headers.set('Authorization', `token ${token}`);
+            headers.set('Authorization', `Bearer ${token}`);
             headers.set('Accept', 'application/vnd.github+json');
             headers.set('User-Agent', GITHUB_USER_AGENT);
             const response = await fetch(GITHUB_USER_API_URL, {
