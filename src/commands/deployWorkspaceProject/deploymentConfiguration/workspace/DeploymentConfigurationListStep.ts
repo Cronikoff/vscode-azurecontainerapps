@@ -72,7 +72,7 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
             .map((deploymentConfiguration, i) => ({
                 deploymentConfiguration,
                 configurationIdx: i,
-                score: this.getDecisionScore(deploymentConfiguration)
+                score: this.calculateConfigurationScore(deploymentConfiguration)
             }))
             .sort((a, b) => b.score - a.score);
 
@@ -99,7 +99,7 @@ export class DeploymentConfigurationListStep extends AzureWizardPromptStep<Works
         return picks;
     }
 
-    private getDecisionScore(deploymentConfiguration: DeploymentConfigurationSettings): number {
+    private calculateConfigurationScore(deploymentConfiguration: DeploymentConfigurationSettings): number {
         let score: number = 0;
 
         if (deploymentConfiguration.containerApp) {
