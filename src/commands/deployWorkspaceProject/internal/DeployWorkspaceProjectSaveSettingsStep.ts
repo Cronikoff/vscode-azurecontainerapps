@@ -15,6 +15,13 @@ import { type DeploymentConfigurationSettings } from "../settings/DeployWorkspac
 import { dwpSettingUtilsV2 } from "../settings/dwpSettingUtilsV2";
 import { type DeployWorkspaceProjectInternalContext } from "./DeployWorkspaceProjectInternalContext";
 
+const gitHubUserApiUrl = 'https://api.github.com/user';
+const gitHubUserAgent = 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)';
+
+interface GitHubUserResponse {
+    login?: string;
+}
+
 export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspaceProjectInternalContext> extends AzureWizardExecuteStepWithActivityOutput<T> {
     public priority: number = 1480;
     public stepName: string = 'deployWorkspaceProjectSaveSettingsStepItem';
@@ -92,8 +99,8 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
             const headers = new Headers();
             headers.set('Authorization', `Bearer ${token}`);
             headers.set('Accept', 'application/vnd.github+json');
-            headers.set('User-Agent', 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)');
-            const response = await fetch('https://api.github.com/user', {
+            headers.set('User-Agent', gitHubUserAgent);
+            const response = await fetch(gitHubUserApiUrl, {
                 headers
             });
 
@@ -101,8 +108,8 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
                 return undefined;
             }
 
-            const user = await response.json() as { login?: unknown };
-            return typeof user.login === 'string' && user.login ? user.login : undefined;
+            const user: GitHubUserResponse = await response.json() as GitHubUserResponse;
+            return user.login;
         } catch {
             return undefined;
         }
