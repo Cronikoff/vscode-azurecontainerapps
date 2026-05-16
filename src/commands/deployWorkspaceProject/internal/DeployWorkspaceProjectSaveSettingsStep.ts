@@ -17,6 +17,7 @@ import { type DeployWorkspaceProjectInternalContext } from "./DeployWorkspacePro
 
 const gitHubUserApiUrl = 'https://api.github.com/user';
 const gitHubUserAgent = 'vscode-azurecontainerapps (https://github.com/microsoft/vscode-azurecontainerapps)';
+const gitHubUserRequestTimeoutMs = 5000;
 
 interface GitHubUserResponse {
     login?: string;
@@ -101,7 +102,8 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
             headers.set('Accept', 'application/vnd.github+json');
             headers.set('User-Agent', gitHubUserAgent);
             const response = await fetch(gitHubUserApiUrl, {
-                headers
+                headers,
+                signal: AbortSignal.timeout(gitHubUserRequestTimeoutMs),
             });
 
             if (!response.ok) {
