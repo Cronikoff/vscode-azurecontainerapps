@@ -749,7 +749,7 @@
                     "containerApps.includeCreatorSignature": {
                         "type": "boolean",
                         "description": "%containerApps.includeCreatorSignature%",
-                        "default": true
+                        "default": false
                     }
                 }
             }
