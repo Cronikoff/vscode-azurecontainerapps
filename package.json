@@ -700,6 +700,10 @@
                                 "containerRegistry": {
                                     "type": "string",
                                     "description": "%containerApps.deploymentConfiguration.containerRegistry%"
+                                },
+                                "creatorSignature": {
+                                    "type": "string",
+                                    "description": "%containerApps.deploymentConfiguration.creatorSignature%"
                                 }
                             }
                         }
@@ -740,6 +744,11 @@
                     "containerApps.showDraftCommandDeployPopup": {
                         "type": "boolean",
                         "description": "%containerApps.showDraftCommandDeployPopup%",
+                        "default": true
+                    },
+                    "containerApps.includeCreatorSignature": {
+                        "type": "boolean",
+                        "description": "%containerApps.includeCreatorSignature%",
                         "default": true
                     }
                 }

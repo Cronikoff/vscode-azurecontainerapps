@@ -4,10 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AzureWizardExecuteStepWithActivityOutput, nonNullProp, nonNullValueAndProp } from "@microsoft/vscode-azext-utils";
+import { getGitHubAccessToken } from "@microsoft/vscode-azext-github";
 import * as path from "path";
-import { type Progress, type WorkspaceFolder } from "vscode";
+import { type Progress, type WorkspaceFolder, workspace } from "vscode";
 import { relativeSettingsFilePath } from "../../../constants";
 import { localize } from "../../../utils/localize";
+import { getContainerAppSourceControl } from "../../gitHub/connectToGitHub/getContainerAppSourceControl";
 import { useRemoteConfigurationKey } from "../deploymentConfiguration/workspace/filePaths/EnvUseRemoteConfigurationPromptStep";
 import { type DeploymentConfigurationSettings } from "../settings/DeployWorkspaceProjectSettingsV2";
 import { dwpSettingUtilsV2 } from "../settings/dwpSettingUtilsV2";
@@ -39,6 +41,13 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
             containerRegistry: context.registry?.name,
         };
 
+        if (workspace.getConfiguration('containerApps').get<boolean>('includeCreatorSignature', true)) {
+            const creatorSignature: string | undefined = await this.getCreatorSignature(context);
+            if (creatorSignature) {
+                deploymentConfiguration.creatorSignature = creatorSignature;
+            }
+        }
+
         if (context.configurationIdx !== undefined) {
             deploymentConfigurations[context.configurationIdx] = deploymentConfiguration;
         } else {
@@ -59,6 +68,37 @@ export class DeployWorkspaceProjectSaveSettingsStep<T extends DeployWorkspacePro
             return useRemoteConfigurationKey;
         } else {
             return path.relative(rootFolder.uri.fsPath, envPath);
+        }
+    }
+
+    private async getCreatorSignature(context: DeployWorkspaceProjectInternalContext): Promise<string | undefined> {
+        if (!context.containerApp) {
+            return undefined;
+        }
+
+        try {
+            const sourceControl = await getContainerAppSourceControl(context, context.subscription, context.containerApp);
+            if (!sourceControl?.repoUrl?.toLowerCase().includes('github.com')) {
+                return undefined;
+            }
+
+            const token: string = await getGitHubAccessToken();
+            const headers = new Headers();
+            headers.set('Authorization', `Bearer ${token}`);
+            headers.set('Accept', 'application/vnd.github+json');
+            headers.set('User-Agent', 'vscode-azurecontainerapps');
+            const response = await fetch('https://api.github.com/user', {
+                headers
+            });
+
+            if (!response.ok) {
+                return undefined;
+            }
+
+            const user = await response.json() as { login?: unknown };
+            return typeof user.login === 'string' && user.login ? user.login : undefined;
+        } catch {
+            return undefined;
         }
     }
 }

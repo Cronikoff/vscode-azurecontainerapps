@@ -16,4 +16,5 @@ export interface DeploymentConfigurationSettings {
     resourceGroup?: string;
     containerApp?: string;
     containerRegistry?: string;
+    creatorSignature?: string;
 }
